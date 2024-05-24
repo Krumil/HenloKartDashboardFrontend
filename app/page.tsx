@@ -1,113 +1,205 @@
+"use client";
+
 import Image from "next/image";
+import clsx from "clsx";
+import CopyIcon from "../public/icons/copy.svg";
+
+import { AnimatedCounter } from "react-animated-counter";
+import { useEffect, useState } from "react";
+
+interface RaceResult {
+	race_id: number;
+	winning_token_id: string;
+	winner_address: string;
+}
+
+interface Winner {
+	id: string;
+	address: string;
+	count: number;
+	position: number;
+}
+
+const ITEMS_PER_PAGE = 10;
 
 export default function Home() {
-  return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      <div className="z-10 w-full max-w-5xl items-center justify-between font-mono text-sm lg:flex">
-        <p className="fixed left-0 top-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto  lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30">
-          Get started by editing&nbsp;
-          <code className="font-mono font-bold">app/page.tsx</code>
-        </p>
-        <div className="fixed bottom-0 left-0 flex h-48 w-full items-end justify-center bg-gradient-to-t from-white via-white dark:from-black dark:via-black lg:static lg:size-auto lg:bg-none">
-          <a
-            className="pointer-events-none flex place-items-center gap-2 p-8 lg:pointer-events-auto lg:p-0"
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{" "}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className="dark:invert"
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
-        </div>
-      </div>
+	const [raceResults, setRaceResults] = useState<RaceResult[]>([]);
+	const [winners, setWinners] = useState<Winner[]>([]);
+	const [filteredWinners, setFilteredWinners] = useState<Winner[]>([]);
+	const [searchQuery, setSearchQuery] = useState("");
+	const [currentPage, setCurrentPage] = useState(1);
+	const [totalRaces, setTotalRaces] = useState(0);
 
-      <div className="relative z-[-1] flex place-items-center before:absolute before:h-[300px] before:w-full before:-translate-x-1/2 before:rounded-full before:bg-gradient-radial before:from-white before:to-transparent before:blur-2xl before:content-[''] after:absolute after:-z-20 after:h-[180px] after:w-full after:translate-x-1/3 after:bg-gradient-conic after:from-sky-200 after:via-blue-200 after:blur-2xl after:content-[''] before:dark:bg-gradient-to-br before:dark:from-transparent before:dark:to-blue-700 before:dark:opacity-10 after:dark:from-sky-900 after:dark:via-[#0141ff] after:dark:opacity-40 sm:before:w-[480px] sm:after:w-[240px] before:lg:h-[360px]">
-        <Image
-          className="relative dark:drop-shadow-[0_0_0.3rem_#ffffff70] dark:invert"
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
+	useEffect(() => {
+		const ws = new WebSocket("ws://localhost:8000/ws");
 
-      <div className="mb-32 grid text-center lg:mb-0 lg:w-full lg:max-w-5xl lg:grid-cols-4 lg:text-left">
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Docs{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Find in-depth information about Next.js features and API.
-          </p>
-        </a>
+		ws.onopen = () => {
+			console.log("WebSocket connection opened");
+		};
 
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Learn{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Learn about Next.js in an interactive course with&nbsp;quizzes!
-          </p>
-        </a>
+		ws.onmessage = event => {
+			try {
+				const data = JSON.parse(event.data);
+				const newResults: RaceResult[] = data.data;
+				setRaceResults(prevResults => [...prevResults, ...newResults]);
+				setTotalRaces(prevTotalRaces => prevTotalRaces + newResults.length);
+			} catch (error) {
+				console.error("Error parsing WebSocket message:", error);
+			}
+		};
 
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Templates{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Explore starter templates for Next.js.
-          </p>
-        </a>
+		ws.onerror = error => {
+			console.error("WebSocket error:", error);
+		};
 
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Deploy{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-balance text-sm opacity-50">
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
-      </div>
-    </main>
-  );
+		ws.onclose = event => {
+			console.log("WebSocket connection closed:", event);
+		};
+
+		return () => {
+			ws.close();
+		};
+	}, []);
+
+	useEffect(() => {
+		const raceCount: Record<string, { address: string; count: number }> = {};
+		raceResults.forEach(result => {
+			const id = result.winning_token_id;
+			if (!raceCount[id]) {
+				raceCount[id] = { address: result.winner_address, count: 0 };
+			}
+			raceCount[id].count += 1;
+		});
+
+		const sortedWinners = Object.entries(raceCount)
+			.map(([id, { address, count }]) => ({
+				id,
+				address,
+				count,
+				position: 0
+			}))
+			.sort((a, b) => b.count - a.count); // Sort by count descending
+
+		sortedWinners.forEach((winner, index) => {
+			winner.position = index + 1;
+		});
+
+		setWinners(sortedWinners);
+	}, [raceResults]);
+
+	useEffect(() => {
+		const filtered = winners.filter(
+			winner =>
+				winner.address.toLowerCase().includes(searchQuery.toLowerCase()) || winner.id.includes(searchQuery)
+		);
+		setFilteredWinners(filtered);
+		setCurrentPage(1); // Reset to first page on new filter
+	}, [searchQuery, winners]);
+
+	const indexOfLastItem = currentPage * ITEMS_PER_PAGE;
+	const indexOfFirstItem = indexOfLastItem - ITEMS_PER_PAGE;
+	const currentItems = filteredWinners.slice(indexOfFirstItem, indexOfLastItem);
+
+	// const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
+	// const topWinner = winners[0];
+
+	return (
+		<main className='min-h-screen bg-slate-800 text-custom-200'>
+			<div className='container mx-auto p-4'>
+				{/* image avatar */}
+				<div className='flex items-center space-x-4 mb-6'>
+					<Image
+						src='https://imagedelivery.net/BXluQx4ige9GuW0Ia56BHw/61343f2b-5ef4-441b-fc06-1770e92b6500/rectcrop3'
+						alt='avatar'
+						width={50}
+						height={50}
+						className='rounded-full'
+					/>
+					<div>
+						<h1 className='text-3xl font-bold'>HenloKarts Stats</h1>
+					</div>
+				</div>
+				<div className='flex flex-col justify-start bg-custom-600 text-white p-4 shadow rounded-lg mb-6'>
+					<h2 className='text-2xl font-semibold mb-2'>Total Races</h2>
+					<AnimatedCounter
+						value={totalRaces}
+						color='white'
+						fontSize='2rem'
+						includeDecimals={false}
+						containerStyles={{ margin: "0", width: "fit-content", textAlign: "center" }}
+					/>
+				</div>
+				{/* {topWinner && (
+					<div className='bg-custom-600 p-6 shadow rounded-lg mb-6 text-white'>
+						<h2 className='text-lg font-semibold'>Top Winner: {topWinner.address}</h2>
+						<p className='text-3xl'>{topWinner.count} Wins</p>
+					</div>
+				)} */}
+
+				<input
+					type='text'
+					placeholder='Search by ID or address...'
+					value={searchQuery}
+					onChange={e => setSearchQuery(e.target.value)}
+					className='mb-4 px-4 py-2 border rounded-lg text-black min-w-full'
+				/>
+
+				<div className='grid grid-cols-1 gap-4 max-h-[500px] overflow-y-scroll'>
+					{filteredWinners.map((winner, index) => (
+						<div
+							key={index}
+							className={clsx(
+								"py-4 px-6 rounded-lg shadow-md text-center text-white flex justify-between",
+								{
+									"bg-yellow-500": winner.position === 0, // Gold
+									"bg-gray-400": winner.position === 1, // Silver
+									"bg-amber-700": winner.position === 2, // Bronze
+									"bg-custom-600": winner.position > 2 // Default color for others
+								}
+							)}>
+							<div className='flex items-center  text-2xl'>
+								{winner.position === 1
+									? "🥇"
+									: winner.position === 2
+									? "🥈"
+									: winner.position === 3
+									? "🥉"
+									: `${winner.position + 1}th`}
+							</div>
+							<div className='flex flex-col items-start'>
+								<h3 className='text-2xl font-semibold'>#{winner.id}</h3>
+								<div className='flex items-center justify-center'>
+									{winner.address.slice(0, 4)}...{winner.address.slice(-4)}
+									<button
+										className='bg-transparent text-white rounded-lg ml-1'
+										onClick={() => navigator.clipboard.writeText(winner.address)}>
+										{" "}
+										<Image src={CopyIcon} alt='copy' width={20} height={20} />
+									</button>
+								</div>
+							</div>
+							<p className='flex items-center text-2xl'>{winner.count} Wins</p>
+						</div>
+					))}
+				</div>
+
+				{/* Pagination */}
+				{/* <div className='py-4 flex justify-between items-center'>
+					<button
+						onClick={() => paginate(currentPage - 1)}
+						disabled={currentPage === 1}
+						className='px-3 py-1 bg-custom-500 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed'>
+						Previous
+					</button>
+
+					<button
+						onClick={() => paginate(currentPage + 1)}
+						disabled={currentItems.length < ITEMS_PER_PAGE}
+						className='px-3 py-1 bg-custom-500 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed'>
+						Next
+					</button>
+				</div> */}
+			</div>
+		</main>
+	);
 }
