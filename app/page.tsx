@@ -31,7 +31,7 @@ export default function Home() {
 	const [totalRaces, setTotalRaces] = useState(0);
 
 	useEffect(() => {
-		const ws = new WebSocket("ws://localhost:8000/ws");
+		const ws = new WebSocket("wss://henlokartdashboard.onrender.com/ws");
 
 		ws.onopen = () => {
 			console.log("WebSocket connection opened");
