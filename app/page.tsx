@@ -105,7 +105,7 @@ export default function Home() {
 
 	return (
 		<main className='min-h-screen bg-slate-800 text-custom-200'>
-			<div className='container mx-auto p-4'>
+			<div className='max-w-5xl mx-auto p-4'>
 				{/* image avatar */}
 				<div className='flex items-center space-x-4 mb-6'>
 					<Image
@@ -116,7 +116,7 @@ export default function Home() {
 						className='rounded-full'
 					/>
 					<div>
-						<h1 className='text-3xl font-bold'>HenloKarts Stats</h1>
+						<h1 className='text-3xl font-bold'>HenloKart Dashboard</h1>
 					</div>
 				</div>
 				<div className='flex flex-col justify-start bg-custom-600 text-white p-4 shadow rounded-lg mb-6'>
@@ -157,25 +157,27 @@ export default function Home() {
 									"bg-custom-600": winner.position > 2 // Default color for others
 								}
 							)}>
-							<div className='flex items-center  text-2xl'>
-								{winner.position === 1
-									? "🥇"
-									: winner.position === 2
-									? "🥈"
-									: winner.position === 3
-									? "🥉"
-									: `${winner.position + 1}th`}
-							</div>
-							<div className='flex flex-col items-start'>
-								<h3 className='text-2xl font-semibold'>#{winner.id}</h3>
-								<div className='flex items-center justify-center'>
-									{winner.address.slice(0, 4)}...{winner.address.slice(-4)}
-									<button
-										className='bg-transparent text-white rounded-lg ml-1'
-										onClick={() => navigator.clipboard.writeText(winner.address)}>
-										{" "}
-										<Image src={CopyIcon} alt='copy' width={20} height={20} />
-									</button>
+							<div className='flex items-center'>
+								<div className='flex items-center text-2xl'>
+									{winner.position === 1
+										? "🥇"
+										: winner.position === 2
+										? "🥈"
+										: winner.position === 3
+										? "🥉"
+										: `${winner.position}th`}
+								</div>
+								<div className='flex flex-col items-start px-6'>
+									<h3 className='text-2xl font-semibold'>#{winner.id}</h3>
+									<div className='flex items-center justify-center'>
+										{winner.address.slice(0, 4)}...{winner.address.slice(-4)}
+										<button
+											className='bg-transparent text-white rounded-lg ml-1'
+											onClick={() => navigator.clipboard.writeText(winner.address)}>
+											{" "}
+											<Image src={CopyIcon} alt='copy' width={20} height={20} />
+										</button>
+									</div>
 								</div>
 							</div>
 							<p className='flex items-center text-2xl'>{winner.count} Wins</p>
