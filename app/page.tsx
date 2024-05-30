@@ -1,125 +1,109 @@
 "use client";
 
 import Image from "next/image";
+import Leaderboard from "@/components/Leaderboard";
+import SortIcon from "@mui/icons-material/Sort";
 import clsx from "clsx";
-import CopyIcon from "../public/icons/copy.svg";
 
 import { AnimatedCounter } from "react-animated-counter";
+import { Menu, MenuItem, IconButton } from "@mui/material";
 import { useEffect, useState } from "react";
-
-interface RaceResult {
-	race_id: number;
-	winning_token_id: string;
-	winner_address: string;
-}
 
 interface Winner {
 	id: string;
-	address: string;
 	count: number;
 	position: number;
+	totalWinPercentage: number;
+	participationWinPercentage: number;
+	totalParticipations: number;
 }
 
-const ITEMS_PER_PAGE = 10;
-
 export default function Home() {
-	const [raceResults, setRaceResults] = useState<RaceResult[]>([]);
 	const [winners, setWinners] = useState<Winner[]>([]);
+	const [topWinners, setTopWinners] = useState<Winner[]>([]);
 	const [filteredWinners, setFilteredWinners] = useState<Winner[]>([]);
 	const [searchQuery, setSearchQuery] = useState("");
-	const [currentPage, setCurrentPage] = useState(1);
 	const [totalRaces, setTotalRaces] = useState(0);
+	const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+	const [sortCriteria, setSortCriteria] = useState("totalWins");
+
+	const open = Boolean(anchorEl);
 
 	useEffect(() => {
-		const ws = new WebSocket("wss://henlokartdashboard.onrender.com/ws");
-
-		ws.onopen = () => {
-			console.log("WebSocket connection opened");
-		};
-
-		ws.onmessage = event => {
+		async function fetchData() {
 			try {
-				const data = JSON.parse(event.data);
-				const newResults: RaceResult[] = data.data;
-				setRaceResults(prevResults => [...prevResults, ...newResults]);
-				setTotalRaces(prevTotalRaces => prevTotalRaces + newResults.length);
+				const response = await fetch("http://localhost:8000/api/stats/tokens");
+				let data = await response.json();
+				data = data.data;
+				const totalRaces = data.reduce((acc: number, token: any) => acc + token.total_races, 0);
+				setTotalRaces(totalRaces);
+
+				const formattedWinners = data.map((token: any, index: number) => ({
+					id: token.token_id,
+					count: token.total_wins,
+					position: index + 1,
+					totalWinPercentage: (token.total_wins / totalRaces) * 100,
+					participationWinPercentage: (token.total_wins / token.total_races) * 100,
+					totalParticipations: token.total_races
+				}));
+
+				const sortedWinners = [...formattedWinners];
+				switch (sortCriteria) {
+					case "totalWins":
+						sortedWinners.sort((a, b) => b.count - a.count);
+						break;
+					case "totalWinPercentage":
+						sortedWinners.sort((a, b) => b.totalWinPercentage - a.totalWinPercentage);
+						break;
+					case "participationWinPercentage":
+						sortedWinners.sort((a, b) => b.participationWinPercentage - a.participationWinPercentage);
+						break;
+				}
+				sortedWinners.forEach((winner, index) => {
+					winner.position = index + 1;
+				});
+				setWinners(sortedWinners);
+				setTopWinners(sortedWinners.slice(0, 3));
 			} catch (error) {
-				console.error("Error parsing WebSocket message:", error);
+				console.error("Error fetching token stats:", error);
 			}
-		};
+		}
 
-		ws.onerror = error => {
-			console.error("WebSocket error:", error);
-		};
-
-		ws.onclose = event => {
-			console.log("WebSocket connection closed:", event);
-		};
-
-		return () => {
-			ws.close();
-		};
-	}, []);
+		fetchData();
+	}, [sortCriteria]);
 
 	useEffect(() => {
-		const raceCount: Record<string, { address: string; count: number }> = {};
-		raceResults.forEach(result => {
-			const id = result.winning_token_id;
-			if (!raceCount[id]) {
-				raceCount[id] = { address: result.winner_address, count: 0 };
-			}
-			raceCount[id].count += 1;
-		});
-
-		const sortedWinners = Object.entries(raceCount)
-			.map(([id, { address, count }]) => ({
-				id,
-				address,
-				count,
-				position: 0
-			}))
-			.sort((a, b) => b.count - a.count); // Sort by count descending
-
-		sortedWinners.forEach((winner, index) => {
-			winner.position = index + 1;
-		});
-
-		setWinners(sortedWinners);
-	}, [raceResults]);
-
-	useEffect(() => {
-		const filtered = winners.filter(
-			winner =>
-				winner.address.toLowerCase().includes(searchQuery.toLowerCase()) || winner.id.includes(searchQuery)
-		);
+		const filtered = winners.filter(winner => winner.id.toString().includes(searchQuery));
 		setFilteredWinners(filtered);
-		setCurrentPage(1); // Reset to first page on new filter
 	}, [searchQuery, winners]);
 
-	const indexOfLastItem = currentPage * ITEMS_PER_PAGE;
-	const indexOfFirstItem = indexOfLastItem - ITEMS_PER_PAGE;
-	const currentItems = filteredWinners.slice(indexOfFirstItem, indexOfLastItem);
+	const handleSortClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+		setAnchorEl(event.currentTarget);
+	};
 
-	// const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
-	// const topWinner = winners[0];
+	const handleSortClose = (criteria: string) => {
+		setSortCriteria(criteria);
+		setAnchorEl(null);
+	};
 
 	return (
 		<main className='min-h-screen bg-slate-800 text-custom-200'>
 			<div className='max-w-5xl mx-auto p-4'>
 				{/* image avatar */}
-				<div className='flex items-center space-x-4 mb-6'>
-					<Image
+				<div className='flex items-center space-x-4 mb-12'>
+					{/* <Image
+						unoptimized
 						src='https://imagedelivery.net/BXluQx4ige9GuW0Ia56BHw/61343f2b-5ef4-441b-fc06-1770e92b6500/rectcrop3'
 						alt='avatar'
 						width={50}
 						height={50}
 						className='rounded-full'
-					/>
+					/> */}
 					<div>
 						<h1 className='text-3xl font-bold'>HenloKart Dashboard</h1>
 					</div>
 				</div>
-				<div className='flex flex-col justify-start bg-custom-600 text-white p-4 shadow rounded-lg mb-6'>
+				{/* <div className='flex flex-col justify-start bg-custom-600 text-white p-4 shadow rounded-lg mb-6'>
 					<h2 className='text-2xl font-semibold mb-2'>Total Races</h2>
 					<AnimatedCounter
 						value={totalRaces}
@@ -128,22 +112,27 @@ export default function Home() {
 						includeDecimals={false}
 						containerStyles={{ margin: "0", width: "fit-content", textAlign: "center" }}
 					/>
+				</div> */}
+				<Leaderboard topWinners={topWinners} sortCriteria={sortCriteria} />
+				<div className='flex min-w-full justify-between items-center my-4'>
+					<input
+						type='text'
+						placeholder='Search by ID...'
+						value={searchQuery}
+						onChange={e => setSearchQuery(e.target.value)}
+						className='p-2 border rounded-lg text-black grow'
+					/>
+					<IconButton onClick={handleSortClick}>
+						<SortIcon className='text-white' />
+					</IconButton>
+					<Menu anchorEl={anchorEl} open={open} onClose={() => setAnchorEl(null)}>
+						<MenuItem onClick={() => handleSortClose("totalWins")}>Total Wins</MenuItem>
+						{/* <MenuItem onClick={() => handleSortClose("totalWinPercentage")}>Total Win Percentage</MenuItem> */}
+						<MenuItem onClick={() => handleSortClose("participationWinPercentage")}>
+							Participation Win Percentage
+						</MenuItem>
+					</Menu>
 				</div>
-				{/* {topWinner && (
-					<div className='bg-custom-600 p-6 shadow rounded-lg mb-6 text-white'>
-						<h2 className='text-lg font-semibold'>Top Winner: {topWinner.address}</h2>
-						<p className='text-3xl'>{topWinner.count} Wins</p>
-					</div>
-				)} */}
-
-				<input
-					type='text'
-					placeholder='Search by ID or address...'
-					value={searchQuery}
-					onChange={e => setSearchQuery(e.target.value)}
-					className='mb-4 px-4 py-2 border rounded-lg text-black min-w-full'
-				/>
-
 				<div className='grid grid-cols-1 gap-4 max-h-[500px] overflow-y-scroll'>
 					{filteredWinners.map((winner, index) => (
 						<div
@@ -151,10 +140,10 @@ export default function Home() {
 							className={clsx(
 								"py-4 px-6 rounded-lg shadow-md text-center text-white flex justify-between",
 								{
-									"bg-yellow-500": winner.position === 0, // Gold
-									"bg-gray-400": winner.position === 1, // Silver
-									"bg-amber-700": winner.position === 2, // Bronze
-									"bg-custom-600": winner.position > 2 // Default color for others
+									"bg-yellow-500": winner.position === 1, // Gold
+									"bg-gray-400": winner.position === 2, // Silver
+									"bg-amber-700": winner.position === 3, // Bronze
+									"bg-custom-600": winner.position > 3 // Default color for others
 								}
 							)}>
 							<div className='flex items-center'>
@@ -165,42 +154,19 @@ export default function Home() {
 										? "🥈"
 										: winner.position === 3
 										? "🥉"
-										: `${winner.position}th`}
+										: `${winner.position}`}
 								</div>
 								<div className='flex flex-col items-start px-6'>
 									<h3 className='text-2xl font-semibold'>#{winner.id}</h3>
-									<div className='flex items-center justify-center'>
-										{winner.address.slice(0, 4)}...{winner.address.slice(-4)}
-										<button
-											className='bg-transparent text-white rounded-lg ml-1'
-											onClick={() => navigator.clipboard.writeText(winner.address)}>
-											{" "}
-											<Image src={CopyIcon} alt='copy' width={20} height={20} />
-										</button>
-									</div>
 								</div>
 							</div>
-							<p className='flex items-center text-2xl'>{winner.count} Wins</p>
+							<div className='flex flex-col items-center'>
+								<p className='text-2xl'>{winner.count} Wins</p>
+								<p className='text-md'>{winner.participationWinPercentage.toFixed(2)}%</p>
+							</div>
 						</div>
 					))}
 				</div>
-
-				{/* Pagination */}
-				{/* <div className='py-4 flex justify-between items-center'>
-					<button
-						onClick={() => paginate(currentPage - 1)}
-						disabled={currentPage === 1}
-						className='px-3 py-1 bg-custom-500 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed'>
-						Previous
-					</button>
-
-					<button
-						onClick={() => paginate(currentPage + 1)}
-						disabled={currentItems.length < ITEMS_PER_PAGE}
-						className='px-3 py-1 bg-custom-500 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed'>
-						Next
-					</button>
-				</div> */}
 			</div>
 		</main>
 	);
