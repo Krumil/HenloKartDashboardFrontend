@@ -73,7 +73,7 @@ export default function Home() {
 	}, [sortCriteria]);
 
 	useEffect(() => {
-		const filtered = winners.filter(winner => winner.id.toString().includes(searchQuery));
+		const filtered = winners.filter(winner => winner.id.includes(searchQuery));
 		setFilteredWinners(filtered);
 	}, [searchQuery, winners]);
 
