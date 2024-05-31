@@ -46,9 +46,9 @@ const Leaderboard = ({ topWinners, sortCriteria }: { topWinners: Winner[]; sortC
 							alt={`Avatar of ${winner.id}`}
 							height={100}
 							width={100}
-							className='rounded-full'
+							className='rounded-full bg-custom-600'
 						/>
-						<div className='absolute -top-8 left-1/2 -translate-x-1/2 bg-transparent rounded-full p-1'>
+						<div className='absolute -top-12 left-1/2 -translate-x-1/2 bg-transparent rounded-full p-1'>
 							{/* add position */}
 							<div className='absolute text-sm left-1/2 top-2 -translate-x-1 font-bold text-white'>
 								{winner.position}

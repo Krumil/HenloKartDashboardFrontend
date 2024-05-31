@@ -86,33 +86,34 @@ export default function Home() {
 		setAnchorEl(null);
 	};
 
+	if (!winners.length) {
+		return "";
+	}
+
 	return (
 		<main className='min-h-screen bg-slate-800 text-custom-200'>
 			<div className='max-w-5xl mx-auto p-4'>
-				{/* image avatar */}
-				<div className='flex items-center space-x-4 mb-12'>
-					{/* <Image
-						unoptimized
-						src='https://imagedelivery.net/BXluQx4ige9GuW0Ia56BHw/61343f2b-5ef4-441b-fc06-1770e92b6500/rectcrop3'
-						alt='avatar'
-						width={50}
-						height={50}
-						className='rounded-full'
-					/> */}
+				<div className='flex items-center space-x-4 mb-2'>
 					<div>
 						<h1 className='text-3xl font-bold'>HenloKart Dashboard</h1>
 					</div>
 				</div>
-				{/* <div className='flex flex-col justify-start bg-custom-600 text-white p-4 shadow rounded-lg mb-6'>
-					<h2 className='text-2xl font-semibold mb-2'>Total Races</h2>
+				<div className='flex justify-between bg-custom-600 text-white p-4 shadow rounded-lg mb-16'>
+					<h2 className='text-2xl font-semibold'>Total Races</h2>
 					<AnimatedCounter
 						value={totalRaces}
 						color='white'
-						fontSize='2rem'
+						fontSize='1.5rem'
 						includeDecimals={false}
-						containerStyles={{ margin: "0", width: "fit-content", textAlign: "center" }}
+						containerStyles={{
+							margin: "0",
+							width: "fit-content",
+							textAlign: "center",
+							marginTop: "0.25rem",
+							fontWeight: "bold"
+						}}
 					/>
-				</div> */}
+				</div>
 				<Leaderboard topWinners={topWinners} sortCriteria={sortCriteria} />
 				<div className='flex min-w-full justify-between items-center my-4'>
 					<input
@@ -133,19 +134,16 @@ export default function Home() {
 						</MenuItem>
 					</Menu>
 				</div>
-				<div className='grid grid-cols-1 gap-4 max-h-[500px] overflow-y-scroll'>
-					{filteredWinners.map((winner, index) => (
+				<div className='grid grid-cols-1 gap-4 lg:max-h-[400px] overflow-y-scroll'>
+					{filteredWinners.slice(3).map((winner, index) => (
 						<div
 							key={index}
-							className={clsx(
-								"py-4 px-6 rounded-lg shadow-md text-center text-white flex justify-between",
-								{
-									"bg-yellow-500": winner.position === 1, // Gold
-									"bg-gray-400": winner.position === 2, // Silver
-									"bg-amber-700": winner.position === 3, // Bronze
-									"bg-custom-600": winner.position > 3 // Default color for others
-								}
-							)}>
+							className={clsx("p-4 rounded-lg shadow-md text-center text-white flex justify-between", {
+								"bg-yellow-500": winner.position === 1, // Gold
+								"bg-gray-400": winner.position === 2, // Silver
+								"bg-amber-700": winner.position === 3, // Bronze
+								"bg-custom-600": winner.position > 3 // Default color for others
+							})}>
 							<div className='flex items-center'>
 								<div className='flex items-center text-2xl'>
 									{winner.position === 1
@@ -156,7 +154,14 @@ export default function Home() {
 										? "🥉"
 										: `${winner.position}`}
 								</div>
-								<div className='flex flex-col items-start px-6'>
+								<div className='flex items-center px-3'>
+									<Image
+										src={`https://robohash.org/${winner.id}`}
+										alt={`Avatar of ${winner.id}`}
+										height={50}
+										width={50}
+										className='rounded-full bg-custom-300 mr-2'
+									/>
 									<h3 className='text-2xl font-semibold'>#{winner.id}</h3>
 								</div>
 							</div>
