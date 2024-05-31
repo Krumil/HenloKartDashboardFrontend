@@ -35,7 +35,7 @@ export default function Home() {
 				const response = await fetch("https://henlokartdashboard.onrender.com/api/stats/tokens");
 				let data = await response.json();
 				data = data.data;
-				const totalRaces = data.reduce((acc: number, token: any) => acc + token.total_races, 0);
+				const totalRaces = data.reduce((acc: number, token: any) => acc + token.total_wins, 0);
 				setTotalRaces(totalRaces);
 
 				const formattedWinners = data.map((token: any, index: number) => ({
