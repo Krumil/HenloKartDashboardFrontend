@@ -32,7 +32,7 @@ export default function Home() {
 	useEffect(() => {
 		async function fetchData() {
 			try {
-				const response = await fetch("http://localhost:8000/api/stats/tokens");
+				const response = await fetch("https://henlokartdashboard.onrender.com/api/stats/tokens");
 				let data = await response.json();
 				data = data.data;
 				const totalRaces = data.reduce((acc: number, token: any) => acc + token.total_races, 0);
