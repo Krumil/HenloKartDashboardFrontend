@@ -21,6 +21,7 @@ interface Winner {
 export default function Home() {
 	const [winners, setWinners] = useState<Winner[]>([]);
 	const [topWinners, setTopWinners] = useState<Winner[]>([]);
+	const [listWinners, setListWinners] = useState<Winner[]>([]);
 	const [filteredWinners, setFilteredWinners] = useState<Winner[]>([]);
 	const [searchQuery, setSearchQuery] = useState("");
 	const [totalRaces, setTotalRaces] = useState(0);
@@ -64,6 +65,7 @@ export default function Home() {
 				});
 				setWinners(sortedWinners);
 				setTopWinners(sortedWinners.slice(0, 3));
+				setListWinners(sortedWinners.slice(3));
 			} catch (error) {
 				console.error("Error fetching token stats:", error);
 			}
@@ -73,9 +75,9 @@ export default function Home() {
 	}, [sortCriteria]);
 
 	useEffect(() => {
-		const filtered = winners.filter(winner => winner.id.toString().includes(searchQuery));
+		const filtered = listWinners.filter(winner => winner.id.toString().includes(searchQuery));
 		setFilteredWinners(filtered);
-	}, [searchQuery, winners]);
+	}, [searchQuery, listWinners]);
 
 	const handleSortClick = (event: React.MouseEvent<HTMLButtonElement>) => {
 		setAnchorEl(event.currentTarget);
@@ -91,8 +93,8 @@ export default function Home() {
 	}
 
 	return (
-		<main className='min-h-screen bg-slate-800 text-custom-200'>
-			<div className='max-w-5xl mx-auto p-4'>
+		<main className='h-screen bg-slate-800 text-custom-200 flex flex-col items-center'>
+			<div className='h-screen max-w-5xl lg:max-w-screen-lg lg:w-[1024px] p-4 flex flex-col flex-grow'>
 				<div className='flex items-center space-x-4 mb-2'>
 					<div>
 						<h1 className='text-3xl font-bold'>HenloKart Dashboard</h1>
@@ -128,49 +130,53 @@ export default function Home() {
 					</IconButton>
 					<Menu anchorEl={anchorEl} open={open} onClose={() => setAnchorEl(null)}>
 						<MenuItem onClick={() => handleSortClose("totalWins")}>Total Wins</MenuItem>
-						{/* <MenuItem onClick={() => handleSortClose("totalWinPercentage")}>Total Win Percentage</MenuItem> */}
 						<MenuItem onClick={() => handleSortClose("participationWinPercentage")}>
 							Participation Win Percentage
 						</MenuItem>
 					</Menu>
 				</div>
-				<div className='grid grid-cols-1 gap-4 lg:max-h-[400px] overflow-y-scroll'>
-					{filteredWinners.slice(3).map((winner, index) => (
-						<div
-							key={index}
-							className={clsx("p-4 rounded-lg shadow-md text-center text-white flex justify-between", {
-								"bg-yellow-500": winner.position === 1, // Gold
-								"bg-gray-400": winner.position === 2, // Silver
-								"bg-amber-700": winner.position === 3, // Bronze
-								"bg-custom-600": winner.position > 3 // Default color for others
-							})}>
-							<div className='flex items-center'>
-								<div className='flex items-center text-2xl'>
-									{winner.position === 1
-										? "🥇"
-										: winner.position === 2
-										? "🥈"
-										: winner.position === 3
-										? "🥉"
-										: `${winner.position}`}
+				<div className='flex-1 overflow-y-auto'>
+					<div className='grid grid-cols-1 gap-4'>
+						{filteredWinners.map((winner, index) => (
+							<div
+								key={index}
+								className={clsx(
+									"p-4 rounded-lg shadow-md text-center text-white flex justify-between",
+									{
+										"bg-yellow-500": winner.position === 1, // Gold
+										"bg-gray-400": winner.position === 2, // Silver
+										"bg-amber-700": winner.position === 3, // Bronze
+										"bg-custom-600": winner.position > 3 // Default color for others
+									}
+								)}>
+								<div className='flex items-center'>
+									<div className='flex items-center text-2xl'>
+										{winner.position === 1
+											? "🥇"
+											: winner.position === 2
+											? "🥈"
+											: winner.position === 3
+											? "🥉"
+											: `${winner.position}`}
+									</div>
+									<div className='flex items-center px-3'>
+										<Image
+											src={`https://robohash.org/${winner.id}`}
+											alt={`Avatar of ${winner.id}`}
+											height={50}
+											width={50}
+											className='rounded-full bg-custom-300 mr-2'
+										/>
+										<h3 className='text-2xl font-semibold'>#{winner.id}</h3>
+									</div>
 								</div>
-								<div className='flex items-center px-3'>
-									<Image
-										src={`https://robohash.org/${winner.id}`}
-										alt={`Avatar of ${winner.id}`}
-										height={50}
-										width={50}
-										className='rounded-full bg-custom-300 mr-2'
-									/>
-									<h3 className='text-2xl font-semibold'>#{winner.id}</h3>
+								<div className='flex flex-col items-center'>
+									<p className='text-2xl'>{winner.count} Wins</p>
+									<p className='text-md'>{winner.participationWinPercentage.toFixed(2)}%</p>
 								</div>
 							</div>
-							<div className='flex flex-col items-center'>
-								<p className='text-2xl'>{winner.count} Wins</p>
-								<p className='text-md'>{winner.participationWinPercentage.toFixed(2)}%</p>
-							</div>
-						</div>
-					))}
+						))}
+					</div>
 				</div>
 			</div>
 		</main>

@@ -36,16 +36,25 @@ const Leaderboard = ({ topWinners, sortCriteria }: { topWinners: Winner[]; sortC
 		return "";
 	};
 
+	const getImageSize = () => {
+		// if mobile
+		if (typeof window !== "undefined" && window.innerWidth <= 768) {
+			return 75;
+		}
+		return 100;
+	};
+
 	return (
 		<div className='flex justify-center space-x-4 py-5'>
 			{sortedWinners.map((winner, index) => (
 				<div key={winner.id} className={`flex flex-col items-center w-28 ${getScale(winner.position)}`}>
-					<div className='relative w-24 h-24'>
+					<div className='flex justify-center items-center relative w-20 h-20 lg:w-24 lg:h-24'>
 						<Image
+							priority
 							src={`https://robohash.org/${winner.id}`}
 							alt={`Avatar of ${winner.id}`}
-							height={100}
-							width={100}
+							height={getImageSize()}
+							width={getImageSize()}
 							className='rounded-full bg-custom-600'
 						/>
 						<div className='absolute -top-12 left-1/2 -translate-x-1/2 bg-transparent rounded-full p-1'>
